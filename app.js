@@ -78,6 +78,24 @@ function chart(pts, { band, h = 120 } = {}) {
     <text x="${P}" y="${h - 3}">${pts[0].x.slice(5)}</text><text x="${W - 8}" y="${h - 3}" text-anchor="end">${pts.at(-1).x.slice(5)}</text></svg>`;
 }
 
+// ---------- visual helpers ----------
+const hero = (inner, cls = '') => `<div class="hero ${cls}"><div class="hero-img"></div><div class="hero-over">${inner}</div></div>`;
+const ring = (frac, label) => { const r = 26, c = 2 * Math.PI * r, f = Math.max(0, Math.min(1, frac || 0));
+  return `<div class="ring"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="${r}" class="bg"/><circle cx="32" cy="32" r="${r}" class="fg" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - f)}"/></svg><b>${label}</b></div>`; };
+const greeting = () => { const h = new Date().getHours(); return h < 5 ? 'Late night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; };
+// Last three months as dot grids: filled = FBEOD, ringed = off-day, outlined = today.
+function dotCal() {
+  const today = L.localDate(), by = {};
+  for (const w of L.doneWorkouts(db)) by[w.date] = by[w.date] === 'f' || w.type !== 'S' ? 'f' : 's';
+  const months = [2, 1, 0].map(k => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - k); return d; });
+  return `<div class="dotcal">${months.map(m => {
+    const y = m.getFullYear(), mo = m.getMonth(), n = new Date(y, mo + 1, 0).getDate(), lead = (new Date(y, mo, 1).getDay() + 6) % 7;
+    const cells = [...Array(lead).fill('<i class="pad"></i>'), ...Array.from({ length: n }, (_, i) => { const ds = L.localDate(new Date(y, mo, i + 1));
+      return `<i class="${by[ds] || ''}${ds === today ? ' t' : ''}${ds > today ? ' fut' : ''}"></i>`; })];
+    return `<div><p>${m.toLocaleDateString(undefined, { month: 'short' })}</p><div class="dots">${cells.join('')}</div></div>`; }).join('')}</div>
+    <p class="muted small legend"><i class="f"></i> FBEOD <i class="s"></i> Off-day <i class="t"></i> Today</p>`;
+}
+
 // ---------- views ----------
 function home() {
   const s = L.schedule(db), a = activeW(), today = L.localDate();
@@ -108,12 +126,17 @@ function home() {
   const unsynced = L.doneWorkouts(db).filter(w => (w.updatedAt || '') > (db.lastSync || '')).length;
   const skills = db.skills.trees.slice(0, 6).map(t => { const c = L.skillCurrent(t, db.skills.status); return `<li><span>${esc(t.name)}</span><span class="muted">${c.done ? '✓ complete' : esc(c.step.name)}</span></li>`; }).join('');
 
-  return todayCard +
-    `<div class="stats"><div class="stat"><span>Next</span><b style="font-size:14px">${nextTxt}</b></div>
-     <div class="stat"><span>Rotation</span><b>${rot.map(t => `<span class="chip ${t === s.next && !a ? 'on' : ''}">${t}</span>`).join(' ')}</b></div>
-     <div class="stat"><span>Streak · week</span><b>${s.streak} <small class="muted">· ${s.week.fbeod}F ${s.week.skill}S</small></b></div></div>` +
+  const big = a ? ['Mid-hunt', esc(a.name) + ' in progress'] : s.todayPlan.kind === 'train' ? [`FBEOD ${s.next}`, esc(tpl(s.next)?.title || '')]
+    : s.todayPlan.kind === 'skill' && !doneToday.length ? ['Rest day', esc(plan.name)] : ['Done', 'Recover and refuel'];
+  const wkFrac = Math.min(1, s.week.fbeod / 3.5);
+  return hero(`<p class="eyebrow">${greeting()} · ${fmtDate(today)}</p><h1>${big[0]}</h1><p class="sub">${big[1]}</p>`) + todayCard +
+    `<div class="bento">
+     <div class="tile wide"><span>Next</span><b>${nextTxt}</b><div class="rot">${rot.map(t => `<span class="chip ${t === s.next && !a ? 'on' : ''}">${t}</span>`).join('')}</div></div>
+     <div class="tile"><span>Bodyweight</span><b class="big">${lb ? lb.bw : '—'}<small> ${db.settings.unit}</small></b><small class="muted">${g.bwMin ? `goal ${g.bwMin}–${g.bwMax}` : 'set a goal'}</small></div>
+     <div class="tile ringtile">${ring(wkFrac, s.week.fbeod)}<div><span>This week</span><small class="muted">${s.week.fbeod} FBEOD · ${s.week.skill} off-day<br>streak ${s.streak}</small></div></div></div>` +
+    card('Consistency', dotCal()) +
     checkinCard(s) + (notes.length ? card('Recovery', `<ul class="list">${notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>`) : '') + weekCard() +
-    card('Bodyweight', `<div class="row"><b style="font-size:20px">${lb ? lb.bw + ' ' + db.settings.unit : '—'}</b><span class="muted grow">${g.bwMin ? `goal ${g.bwMin}–${g.bwMax}` : 'no goal set'}</span>${btn('Log', 'tab', 'sm', 'body')}</div>${bw.length > 1 ? chart(bw.slice(-20), { band: g.bwMin ? [g.bwMin, g.bwMax] : null, h: 80 }) : ''}`) +
+    (bw.length > 1 ? card('Bodyweight trend', chart(bw.slice(-20), { band: g.bwMin ? [g.bwMin, g.bwMax] : null, h: 80 })) : '') +
     card('Recent PRs', prs.length ? `<ul class="list">${prs.map(p => `<li><span>🏆 ${esc(p.name)}</span><span class="muted">${esc(p.text)} · ${p.date.slice(5)}</span></li>`).join('')}</ul>` : '<p class="muted">PRs appear after your second session of an exercise.</p>') +
     perfCard() + (last ? card('Last workout', `<ul class="list"><li class="click" data-act="view" data-v="${last.id}"><span>${esc(last.name)} · ${fmtDate(last.date)}</span><span class="muted">${last.entries.filter(e => L.doneSets(e).length).length} exercises ›</span></li></ul>`) : '') +
     card('Skills', `<ul class="list">${skills}</ul>`) +
@@ -169,7 +192,8 @@ function demoUrl(ex, v, images) {
 
 function startPicker() {
   const s = L.schedule(db);
-  return card('Start a session', db.program.templates.map(t =>
+  return hero(`<p class="eyebrow">Train</p><h1>Choose the hunt</h1><p class="sub">Next up: FBEOD ${s.next} — ${esc(tpl(s.next)?.title || '')}</p>`, 'short') +
+    card('Start a session', db.program.templates.map(t =>
     `<div class="row" style="margin:6px 0"><div class="grow"><b>${esc(t.name)}</b> <span class="muted">${esc(t.title)}</span></div>${btn(t.id === s.next ? 'Start · next' : 'Start', 'start', t.id === s.next ? 'primary sm' : 'sm', t.id)}</div>`).join('') +
     `<div class="row" style="margin-top:10px">${btn('Empty session', 'start', 'ghost sm', '')}</div>`) +
     card('Log a session done without the app', `<div class="row"><select id="q-type" style="flex:2">${db.program.templates.map(t => `<option value="${t.id}">${esc(t.name)} — ${esc(t.title)}</option>`).join('')}<option value="S">Off-day</option></select>
@@ -230,7 +254,8 @@ function logView() {
   if (!w) return startPicker();
   const editing = !!ui.edit;
   const done = w.entries.reduce((a, e) => a + L.doneSets(e).length, 0), total = w.entries.reduce((a, e) => a + (e.skipped ? 0 : e.sets.length), 0);
-  return `<div class="row" style="margin-top:4px"><div class="grow"><h2>${esc(w.name)}${editing ? ' <span class="tag">editing</span>' : ''}</h2><span class="muted">${esc(w.title)} · ${done}/${total} sets</span></div>
+  return hero(`<div class="row"><div class="grow"><p class="eyebrow">${editing ? 'Editing' : 'In session'}</p><h1>${esc(w.name)}</h1><p class="sub">${esc(w.title)}</p></div>${ring(total ? done / total : 0, `${done}/${total}`)}</div>`, 'short') +
+    `<div class="row" style="margin-top:4px"><div class="grow"></div>
       <input type="date" data-wf="date" value="${w.date}" style="width:auto"></div>
     <div class="q">${[60, 90, 120, 180].map(s => `<button data-act="t-start" data-v="${s}">⏱ ${s}s</button>`).join('')}</div>
     ${w.entries.map(en => entryCard(w, en)).join('')}
@@ -271,7 +296,9 @@ function progressView() {
   }
   const opts = [...logged, ...db.program.exercises.filter(e => !logged.includes(e))].map(e => `<option value="${e.id}" ${e.id === exId ? 'selected' : ''}>${esc(e.name)}${logged.includes(e) ? '' : ' (no data)'}</option>`).join('');
   const prs = L.doneWorkouts(db).flatMap(w => w.prs || []).slice(0, 12);
-  return card('Exercise', `<select data-act="pick-ex">${opts}</select><div style="margin-top:10px">${exHtml}</div>`) +
+  const all = L.doneWorkouts(db), wk = L.weekly(db);
+  return hero(`<p class="eyebrow">Progress</p><h1>Every leap counts</h1><div class="pills"><div><b>${all.length}</b><span>sessions</span></div><div><b>${all.flatMap(w => w.prs || []).length}</b><span>PRs</span></div><div><b>${wk.tonnage >= 1000 ? (wk.tonnage / 1000).toFixed(1) + 'k' : wk.tonnage}</b><span>lb this week</span></div></div>`) +
+    card('Exercise', `<select data-act="pick-ex">${opts}</select><div style="margin-top:10px">${exHtml}</div>`) +
     card('Athletic performance', testsHtml()) +
     card('PR log', prs.length ? `<ul class="list">${prs.map(p => `<li><span>${esc(p.name)}</span><span class="muted">${esc(p.text)} · ${p.date.slice(5)}</span></li>`).join('')}</ul>` : '<p class="muted">None yet.</p>') +
     card('Workout history', L.doneWorkouts(db).length ? historyList(40) : '<p class="muted">None yet.</p>');
@@ -300,10 +327,12 @@ function testsHtml() {
 function skillsView() {
   const st = db.skills.status, E = ui.skEdit;
   const X0 = X();
-  return `<p class="muted small">${esc(LIMB_NOTE)} Levels unlock automatically when a logged session meets the criterion.</p><div class="row"><p class="muted grow small">Tap a step: empty → working → done.</p>${btn(E ? 'Done editing' : 'Edit trees', 'sk-edit', 'sm ghost')}</div>` +
+  const nDone = Object.values(st).filter(v => v.state === 'done').length, nAll = db.skills.trees.reduce((a, t) => a + t.steps.length, 0);
+  return hero(`<p class="eyebrow">Skills</p><h1>Body control</h1><div class="pills"><div><b>${nDone}</b><span>of ${nAll} levels</span></div><div><b>${db.skills.trees.filter(t => L.skillCurrent(t, st).i > 0).length}</b><span>trees started</span></div></div>`) +
+    `<p class="muted small">${esc(LIMB_NOTE)} Levels unlock automatically when a logged session meets the criterion.</p><div class="row"><p class="muted grow small">Tap a step: empty → working → done.</p>${btn(E ? 'Done editing' : 'Edit trees', 'sk-edit', 'sm ghost')}</div>` +
     db.skills.trees.map(t => {
-      const c = L.skillCurrent(t, st);
-      return card(esc(t.name), t.steps.map((s, i) => {
+      const c = L.skillCurrent(t, st), pct = Math.round(100 * Math.min(c.i, t.steps.length) / (t.steps.length || 1));
+      return card(`${esc(t.name)}<span class="pct">${pct}%</span>`, `<div class="track"><i style="width:${pct}%"></i></div>` + t.steps.map((s, i) => {
         const k = st[`${t.id}/${s.id}`], cls = k?.state || '';
         return `<div class="step ${cls} ${i === c.i ? 'cur' : ''}"><button class="s" data-act="sk-cycle" data-v="${t.id}/${s.id}">${k?.state === 'done' ? '✓' : ''}</button>
           <div class="grow"><b>${esc(s.name)}</b>${k?.state === 'done' ? ` <span class="muted small">${k.date}${k.auto ? ' · logged' : ''}</span>` : ''}<div class="muted small">${esc(L.critText(s.crit, X0))}</div>${s.risk ? `<div class="warn">⚠ ${esc(RISK[s.risk])}</div>` : ''}</div>
@@ -318,7 +347,9 @@ function bodyView() {
   const lastOf = k => ms.filter(m => L.num(m[k]) != null).at(-1);
   const change = k => { const l = lastOf(k); if (!l) return ''; const o = ms.filter(m => L.num(m[k]) != null && L.days(m.date, l.date) <= 28)[0]; return o && o !== l ? ` <span class="muted small">(${(+l[k] - +o[k] >= 0 ? '+' : '')}${Math.round((+l[k] - +o[k]) * 10) / 10} / ${L.days(o.date, l.date)}d)</span>` : ''; };
   const pts = k => ms.filter(m => L.num(m[k]) != null).map(m => ({ x: m.date, y: +m[k] }));
-  return card('Log measurements', `<div class="form"><div><label>Date</label><input type="date" id="m-date" value="${L.localDate()}"></div>${MF.map(([k, l]) => `<div><label>${l}${k === 'bw' ? ` (${db.settings.unit})` : k === 'bf' ? '' : ' (in)'}</label><input id="m-${k}" inputmode="decimal" placeholder="${esc(lastOf(k)?.[k] ?? '')}"></div>`).join('')}</div>
+  const lb = lastOf('bw');
+  return hero(`<p class="eyebrow">Body</p><h1 class="num">${lb ? lb.bw : '—'}<small> ${db.settings.unit}</small></h1><p class="sub">${lb ? `as of ${fmtDate(lb.date)}${change('bw')}` : 'Log your first bodyweight below'} · ${g.bwMin ? `goal ${g.bwMin}–${g.bwMax}` : 'no goal set'}</p><p class="muted small">Performance first. Scale second.</p>`, 'short') +
+    card('Log measurements', `<div class="form"><div><label>Date</label><input type="date" id="m-date" value="${L.localDate()}"></div>${MF.map(([k, l]) => `<div><label>${l}${k === 'bw' ? ` (${db.settings.unit})` : k === 'bf' ? '' : ' (in)'}</label><input id="m-${k}" inputmode="decimal" placeholder="${esc(lastOf(k)?.[k] ?? '')}"></div>`).join('')}</div>
       <textarea id="m-notes" placeholder="Notes" style="margin-top:8px"></textarea><div class="row" style="margin-top:8px">${btn('Save', 'save-meas', 'primary')}<label class="b sm" style="display:inline-block;font-size:12px;padding:6px 10px;border:1px solid var(--line);border-radius:10px">+ Progress photo<input type="file" accept="image/*" data-act="photo" hidden></label></div>`) +
     ((db.photos || []).length ? card('Photos', `<div class="photos">${db.photos.slice(-6).reverse().map(p => `<figure><img data-photo="${p.id}" alt=""><figcaption class="muted small">${p.date}</figcaption></figure>`).join('')}</div><p class="muted small">Stored on this device; vault sync copies them to Measurements/Photos (iCloud, not git).</p>`) : '') +
     card('Bodyweight', `<p><b style="font-size:20px">${lastOf('bw')?.bw ?? '—'}</b>${change('bw')} <span class="muted">· ${g.bwMin ? `goal ${g.bwMin}–${g.bwMax}` : 'set a goal in Settings'} (${esc(g.text)})</span></p>${chart(pts('bw'), { band: g.bwMin ? [g.bwMin, g.bwMax] : null })}`) +
@@ -330,7 +361,11 @@ function bodyView() {
 function settingsView() {
   const fs = 'showDirectoryPicker' in window, c = db.settings.categories, g = db.settings.goal;
   const advanced = JSON.stringify({ rotation: db.settings.rotation, exercises: db.program.exercises, templates: db.program.templates, blocks: db.program.blocks, tests: db.tests.defs }, null, 1);
-  return card('Obsidian', `<p class="muted small">Last sync: ${db.lastSync ? new Date(db.lastSync).toLocaleString() : 'never'}</p>
+  return hero(`<p class="eyebrow">Settings</p><h1>The den</h1><p class="sub">Sync, backups, goals and program</p>`, 'short') +
+    card('Backgrounds', `<p class="muted small">Use your own photo for any tab. It stays on this phone only (not synced, not uploaded).</p>
+      <div class="bgs">${BG_TABS.map(([t, n]) => `<div class="bgpick"><div class="th" style="background-image:${bgUrls[t] ? `url(${bgUrls[t]})` : `url(img/${{ home: 'home', log: 'train', progress: 'progress', skills: 'skills', body: 'body', settings: 'den' }[t]}.webp)`}"></div>
+        <span>${n}</span><div class="row"><label class="b sm">Choose<input type="file" accept="image/*" data-act="bg" data-v="${t}" hidden></label>${bgUrls[t] ? btn('Reset', 'bg-reset', 'ghost sm', t) : ''}</div></div>`).join('')}</div>`) +
+    card('Obsidian', `<p class="muted small">Last sync: ${db.lastSync ? new Date(db.lastSync).toLocaleString() : 'never'}</p>
       ${fs ? `<p class="small">Pick your <b>vault root</b> (the folder that contains <code>Fitness/</code>). Notes are written straight into it; notes you edited in Obsidian are never overwritten.</p><div class="row">${btn('Sync to vault', 'sync', 'primary')}${btn('Change folder', 'relink', 'ghost sm')}</div>`
       : `<p class="small">This browser can't write to folders (iPhone). Save the backup into <code>Fitness/_data/</code> in your vault via Files — the laptop sync turns it into notes. Or export the full Markdown set.</p>`}
       <div class="row" style="margin-top:8px">${btn('Share backup → vault', 'export-json', fs ? 'sm' : 'primary sm')}${btn('Markdown zip', 'export-zip', 'sm')}${btn('Copy last workout note', 'copy-md', 'sm ghost', L.doneWorkouts(db)[0]?.id || '')}</div>`) +
@@ -349,11 +384,42 @@ function settingsView() {
 // ---------- render ----------
 function render() {
   const v = { home, log: logView, progress: progressView, skills: skillsView, body: bodyView, settings: settingsView, workout: workoutView }[ui.tab] || home;
-  $('#main').innerHTML = v(); fillPhotos();
   const navTab = ui.tab === 'workout' ? 'progress' : ui.tab;
+  document.body.dataset.tab = navTab;
+  const main = $('#main'); main.innerHTML = v(); fillPhotos();
+  main.classList.toggle('anim', !!ui.anim); ui.anim = false; parallax();
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === navTab));
   renderTimer();
 }
+// Custom tab backgrounds: the user's own photos, stored only on this device (IndexedDB), never synced or committed.
+const BG_TABS = [['home', 'Home'], ['log', 'Train'], ['progress', 'Progress'], ['skills', 'Skills'], ['body', 'Body'], ['settings', 'Settings']];
+const bgUrls = {};
+async function applyBgs() {
+  let css = '';
+  for (const [t] of BG_TABS) {
+    const b = await idb.get('bg:' + t);
+    if (bgUrls[t]) URL.revokeObjectURL(bgUrls[t]); bgUrls[t] = b ? URL.createObjectURL(b) : null;
+    if (b) css += `body[data-tab=${t}]{--hero:url(${bgUrls[t]})} body[data-tab=${t}] .hero-img{background-position:center 25%}`;
+  }
+  ($('#bgstyle') || document.head.appendChild(Object.assign(document.createElement('style'), { id: 'bgstyle' }))).textContent = css;
+}
+async function setBg(tab, file) {
+  try {
+    const img = await createImageBitmap(file), k = Math.min(1, 1400 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas'); c.width = img.width * k | 0; c.height = img.height * k | 0; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    await idb.set('bg:' + tab, await new Promise(r => c.toBlob(r, 'image/jpeg', 0.86)));
+    await applyBgs(); render(); toast('Background set');
+  } catch (e) { toast('Could not use that photo: ' + e.message); }
+}
+
+// Gentle parallax on the hero photo (skipped when the user prefers reduced motion).
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let pxQueued = false;
+function parallax() {
+  if (still || pxQueued) return; pxQueued = true;
+  requestAnimationFrame(() => { pxQueued = false; const h = document.querySelector('.hero-img'); if (h) h.style.transform = `translate3d(0, ${Math.min(scrollY, 600) * 0.35}px, 0) scale(1.06)`; });
+}
+addEventListener('scroll', parallax, { passive: true });
 async function fillPhotos() {
   for (const img of document.querySelectorAll('img[data-photo]')) { const b = await idb.get('photo:' + img.dataset.photo); if (b) img.src = URL.createObjectURL(b); }
 }
@@ -366,7 +432,7 @@ async function addPhoto(file) {
     await idb.set('photo:' + p.id, blob); db.photos.push(p); save(true); render(); toast('Photo saved on this device');
   } catch (e) { toast('Photo failed: ' + e.message); }
 }
-const go = tab => { ui.tab = tab; render(); scrollTo(0, 0); };
+const go = tab => { ui.anim = true; ui.tab = tab; render(); scrollTo(0, 0); };
 
 // ---------- rest timer ----------
 let timer = null, actx;
@@ -562,6 +628,7 @@ const A = {
     ui.ck = false; save(true); render();
     const flags = L.regionFlags(db); toast(flags.length ? `⚠ ${flags.map(f => f.name).join(', ')} above cap — progression held there` : 'Check-in saved');
   },
+  async 'bg-reset'(v) { await idb.set('bg:' + v, null); await applyBgs(); render(); toast('Default photo restored'); },
   'sk-edit'() { ui.skEdit = !ui.skEdit; render(); },
   'sk-cycle'(v) {
     const k = db.skills.status[v], next = !k ? 'working' : k.state === 'working' ? 'done' : null;
@@ -654,7 +721,7 @@ const autoSync = () => syncVault(false);
 
 // ---------- events ----------
 document.body.addEventListener('click', e => {
-  const t = e.target.closest('[data-tab]'); if (t) return A.tab(t.dataset.tab);
+  const t = e.target.closest('button[data-tab]'); if (t) return A.tab(t.dataset.tab);
   const a = e.target.closest('[data-act]'); if (!a || a.tagName === 'SELECT' || a.tagName === 'INPUT') return;
   e.preventDefault(); A[a.dataset.act]?.(a.dataset.v, a);
 });
@@ -671,6 +738,7 @@ document.body.addEventListener('change', e => {
   }
   if (a.dataset.en === 'variant') return render();
   if (a.dataset.act === 'photo') return a.files[0] && addPhoto(a.files[0]);
+  if (a.dataset.act === 'bg') return a.files[0] && setBg(a.dataset.v, a.files[0]);
   if (a.dataset.wf === 'date') { const w = curW(); if (w && /^\d{4}-\d\d-\d\d$/.test(a.value)) { w.date = a.value; touch(w); render(); } }
 });
 document.body.addEventListener('input', e => {
@@ -705,6 +773,7 @@ document.body.addEventListener('input', e => {
       db.fixes.b1117 = t; persist(); setTimeout(() => toast('Fixed: 11/17 is now logged as FBEOD B'), 300);
     } else if (has17) db.fixes.b1117 = 'not needed';
   }
+  await applyBgs();
   if (activeW()) ui.tab = 'log';
   render();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => { });

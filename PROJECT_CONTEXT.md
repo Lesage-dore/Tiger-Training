@@ -60,6 +60,13 @@ Each level has a `crit` (exercise, variation, min reps/sec, sets, min load). `au
 ## Daily guidance
 Home "Today" spells out the day: FBEOD session with each exercise's target + suggestion, or an off-day plan from `OFF_PLANS` (cycled; `avoidBefore` skips plans that clash with tomorrow's FBEOD; recovery-only when soreness ≥ 7 or a region is flagged). "Mark … done" / Train → "Log a session done without the app" records `quick: true` workouts (no sets) so the rotation stays right. ▶ on every exercise opens a YouTube/Google Images search (`DEMO_Q` refines ambiguous names) or the user's saved `ex.video` link.
 
+## Visual design (2026-11-18)
+Tiger theme: each tab sets `body[data-tab]` → its own hero photo (`img/*.webp`, original AI-generated, ~60 KB each), background, accent and card tint
+(Home black/amber, Train teal/orange, Progress gold, Skills green/gold, Body sand, Settings neutral). Each view starts with `hero()`; Home adds a summary tile grid, a weekly ring and a 3-month dot calendar.
+Glass cards, floating pill nav with SVG icons, gentle parallax, and an entrance animation that runs only on tab switch (off with reduced motion).
+Users can set their own photo per tab (Settings → Backgrounds), stored on the device in IndexedDB `bg:<tab>` and never committed: third-party photos must not enter this public repo.
+**Gotcha:** `body` carries `data-tab`, so tab clicks match only `button[data-tab]`.
+
 ## UI decisions
 Dark theme, mobile-first, 5 tabs (Home/Train/Progress/Skills/Body) plus Settings. Suggested values appear as dimmed placeholders;
 tapping ✓ accepts them, so a set needs no typing. Quick buttons: Prev wt, +2.5, +5, BW, ±Set, Skip, Note. The rest timer starts
