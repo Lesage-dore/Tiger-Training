@@ -94,7 +94,8 @@ function home() {
     ${planList(plan.blocks.flatMap(b => db.program.blocks.find(x => x.id === b)?.items || []))}
     <div class="row">${btn('Start off-day', 'start-plan', 'primary', plan.id)}${btn('Change blocks', 'tab', 'ghost sm', 'log')}</div>${qbtn('S', 'Did it already, or taking full rest?')}`);
   else todayCard = card('Done for today', `<h2>✓ ${esc(doneToday.map(w => w.name).join(' + ') || 'FBEOD ' + s.todayPlan.type)} done</h2>
-    <p class="muted">${s.todayPlan.kind === 'done' ? `Rest of the day: eat, sleep, optional 10 min easy mobility. Tomorrow is an off-day; FBEOD ${s.next} after that.` : `Next: FBEOD ${s.next} tomorrow.`}</p>`);
+    <p class="muted">${s.todayPlan.kind === 'done' ? `Rest of the day: eat, sleep, optional 10 min easy mobility. Tomorrow is an off-day; FBEOD ${s.next} after that.` : `Next: FBEOD ${s.next} tomorrow.`}</p>
+    ${doneToday.filter(w => w.quick).map(w => btn(`Undo “${esc(w.name)} done”`, 'undo-quick', 'ghost sm', w.id)).join('')}`);
   if (s.todayPlan.kind === 'train') nextTxt = `FBEOD ${nextOf(s.next)} · ${fmtDate(addDays(today, 2))}`;
   else if (s.todayPlan.kind === 'skill') nextTxt = `FBEOD ${s.next} · tomorrow`;
   else nextTxt = `FBEOD ${s.next} · ${fmtDate(addDays(today, 2))}`;
@@ -415,6 +416,11 @@ const A = {
   'start-plan'(v) {
     const sch = L.schedule(db), plan = L.offDayPlan(db, sch); ui.blocks = new Set(plan.blocks); ui.plan = plan; A.start('S');
   },
+  'undo-quick'(v) {
+    const w = byId(v); if (!w?.quick || !confirm(`Remove the “${w.name} done” mark for ${w.date}?`)) return;
+    const t = nowIso(); db.trash.push({ id: w.id, type: 'workout', at: t, updatedAt: t, data: w });
+    db.workouts.splice(db.workouts.indexOf(w), 1); save(true); render(); toast('Removed — rotation updated');
+  },
   quick(v) {
     const type = v || $('#q-type').value, date = v ? L.localDate() : $('#q-date').value;
     if (!/^\d{4}-\d\d-\d\d$/.test(date)) return toast('Pick a date');
@@ -685,6 +691,20 @@ document.body.addEventListener('input', e => {
     if (m) try { const d = L.upgrade(JSON.parse(m)); if (!L.validate(d).length && d.workouts.length) { db = d; toast('Restored from IndexedDB copy'); } } catch { }
   }
   navigator.storage?.persist?.();
+  // One-time repair (2026-11-18): the owner's 11/17 FBEOD B session was marked done with today's date.
+  // Moves set-less quick marks dated 11/18 to 11/17 as FBEOD B; originals are kept in revisions/trash.
+  if (!db.fixes?.b1117 && L.localDate() <= '2026-11-21') {
+    const q = db.workouts.filter(w => w.quick && w.date === '2026-11-18' && w.type !== 'S' && !w.entries.length);
+    const has17 = db.workouts.some(w => w.status === 'done' && w.date === '2026-11-17' && w.type !== 'S');
+    const t = nowIso(); db.fixes ||= {};
+    if (q.length && !has17) {
+      q.forEach(w => db.revisions.push({ id: L.uid('r'), wid: w.id, at: t, updatedAt: t, data: clone(w) }));
+      const [w, ...extra] = q, B = tpl('B');
+      Object.assign(w, { date: '2026-11-17', type: 'B', name: B.name, title: B.title, updatedAt: t, editedAt: t }); delete w.mdPath; w.mdPath = M.workoutPath(db, w);
+      for (const x of extra) { db.trash.push({ id: x.id, type: 'workout', at: t, updatedAt: t, data: x }); db.workouts.splice(db.workouts.indexOf(x), 1); }
+      db.fixes.b1117 = t; persist(); setTimeout(() => toast('Fixed: 11/17 is now logged as FBEOD B'), 300);
+    } else if (has17) db.fixes.b1117 = 'not needed';
+  }
   if (activeW()) ui.tab = 'log';
   render();
   if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => { });
