@@ -1,5 +1,5 @@
 // Pure logic: no DOM. Shared by the app (browser) and sync.mjs (Node).
-import { KINDS, CATEGORIES, EXERCISES, TEMPLATES, BLOCKS, SKILL_TREES, TESTS, DEFAULT_SETTINGS, REGIONS } from './program.js';
+import { KINDS, CATEGORIES, EXERCISES, TEMPLATES, BLOCKS, SKILL_TREES, TESTS, DEFAULT_SETTINGS, REGIONS, OFF_PLANS, RECOVERY_PLAN } from './program.js';
 
 export const SCHEMA = 2;
 const ARRAYS = ['workouts', 'measurements', 'results', 'checkins', 'photos', 'revisions', 'trash', 'archive'];
@@ -16,7 +16,7 @@ export function newDb() {
   return {
     schema: SCHEMA, createdAt: t, updatedAt: t,
     settings: { ...clone(DEFAULT_SETTINGS), categories: clone(CATEGORIES), _u: t },
-    program: { exercises: clone(EXERCISES), templates: clone(TEMPLATES), blocks: clone(BLOCKS), _u: t },
+    program: { exercises: clone(EXERCISES), templates: clone(TEMPLATES), blocks: clone(BLOCKS), offPlans: clone(OFF_PLANS), _u: t },
     skills: { trees: clone(SKILL_TREES), status: {}, _u: t },
     tests: { defs: clone(TESTS), _u: t },
     ...Object.fromEntries(ARRAYS.map(k => [k, []])),
@@ -25,7 +25,8 @@ export function newDb() {
 
 // Schema migrations. Never touches logged records; the old program/skills are archived first.
 export function upgrade(db) {
-  if (!db || db.schema === SCHEMA) return db;
+  if (!db) return db;
+  if (db.schema === SCHEMA) { if (db.program && !db.program.offPlans) db.program.offPlans = clone(OFF_PLANS); return db; }
   if (db.schema === 1) {
     const t = now();
     db.archive = db.archive || [];
@@ -369,6 +370,7 @@ export function schedule(db, today = localDate()) {
 export function recoveryNotes(db, sch, today = localDate()) {
   const n = [], X = exMap(db);
   for (const f of regionFlags(db, today)) n.push(`${f.name} at ${f.pain}/10 (${f.src}) — no progression on exercises loading it; pain-free variations only.`);
+  if (sch.gap >= 4) n.push(`Last FBEOD was ${sch.gap} days ago — pick up with FBEOD ${sch.next}. Don't double up; start the first sets slightly lighter.`);
   if (sch.gap === 1) n.push(`Yesterday was FBEOD ${sch.last.type}: keep today low-fatigue — mobility, handstand, crawling. No max sprints or heavy jumps.`);
   const fb = doneWorkouts(db).filter(w => db.settings.rotation.includes(w.type));
   if (fb[1] && days(fb[1].date, fb[0].date) === 1) n.push('Back-to-back FBEOD days logged — take a skill day before the next one.');
@@ -398,6 +400,23 @@ export function startWorkout(db, tplId, date = localDate()) {
   };
 }
 // Off-day session from chosen blocks (duplicates removed).
+// What to do on an off-day: next plan in the cycle that doesn't clash with tomorrow's FBEOD.
+// Falls back to recovery-only when soreness ≥ 7 or a region is above the pain cap.
+export function offDayPlan(db, sch, today = localDate()) {
+  const plans = db.program.offPlans || OFF_PLANS;
+  const ck = (db.checkins || []).find(c => c.date === today);
+  if (regionFlags(db, today).length || num(ck?.soreness) >= 7) return { ...RECOVERY_PLAN, why: 'high soreness or an irritated tendon' };
+  const lastPlan = doneWorkouts(db).find(w => w.type === 'S' && w.plan)?.plan;
+  let i = (plans.findIndex(p => p.id === lastPlan) + 1) % plans.length;
+  for (let k = 0; k < plans.length; k++, i = (i + 1) % plans.length) if (!plans[i].avoidBefore?.includes(sch.next)) return plans[i];
+  return plans[0];
+}
+// Record a session that was done without the app (keeps the rotation on track). No sets, so no PRs/progression.
+export function quickDone(db, type, date) {
+  const tpl = db.program.templates.find(t => t.id === type), t = now();
+  return { id: uid('w'), type, name: tpl ? tpl.name : 'Off-Day', title: tpl?.title || '', date, startedAt: t, finishedAt: t, updatedAt: t,
+    status: 'done', quick: true, notes: 'Done without the app — no set details logged.', entries: [], prs: [] };
+}
 export function startOffDay(db, blockIds, date = localDate()) {
   const blocks = db.program.blocks.filter(b => blockIds.includes(b.id)), seen = new Set(), t = now();
   const items = blocks.flatMap(b => b.items).filter(it => !seen.has(it.ex) && seen.add(it.ex));

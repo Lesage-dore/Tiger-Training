@@ -75,3 +75,6 @@ input::placeholder, textarea::placeholder { color: #565b63; }
 .q .painsel select { width: auto; border: 0; padding: 6px; font-size: 13px; background: none; }
 .grid select.rpe { padding: 9px 2px; font-size: 14px; text-align: center; }
 .photos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; } .photos figure { margin: 0; } .photos img { width: 100%; aspect-ratio: 3/4; object-fit: cover; border-radius: 8px; background: #0f1113; }
+.list.plan li { align-items: center; } .list.plan .tgt { white-space: nowrap; }
+.demo { background: none; border: 1px solid var(--line); color: var(--acc2); border-radius: 50%; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; text-decoration: none; flex: none; padding: 0; vertical-align: middle; }
+a.b { text-decoration: none; display: inline-block; }

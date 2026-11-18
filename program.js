@@ -229,6 +229,29 @@ export const TESTS = [
   { id: 'deep_squat', name: 'Deep squat hold (heels down)', unit: 's', better: 'higher', ex: 'deep_squat' },
 ];
 
+// Off-day plans, cycled in order. avoidBefore: skip this plan the day before that FBEOD session
+// (keeps pulling/leg-heavy skill work away from A's weighted pulls/squats and B's jumps/sprints).
+export const OFF_PLANS = [
+  { id: 'p1', name: 'Handstand + L-sit', blocks: ['mobility', 'handstand', 'compression'] },
+  { id: 'p2', name: 'Crawl + levers', blocks: ['mobility', 'animal', 'levers'], avoidBefore: ['A'] },
+  { id: 'p3', name: 'Acrobatics + planche', blocks: ['mobility', 'acro', 'planche'], avoidBefore: ['B'] },
+  { id: 'p4', name: 'Muscle-up + pistol', blocks: ['mobility', 'mu', 'pistol', 'tendon'], avoidBefore: ['A', 'B'] },
+  { id: 'p5', name: 'Boxing + grip', blocks: ['mobility', 'boxing', 'climb'] },
+];
+// Recovery-only plan when soreness is high or a tendon is irritated.
+export const RECOVERY_PLAN = { id: 'rec', name: 'Recovery (mobility only)', blocks: ['mobility'] };
+
+// Better demo-search terms where the plain name is ambiguous.
+export const DEMO_Q = {
+  spanish_squat: 'spanish squat isometric patellar tendon', ext_rot: 'cable external rotation rotator cuff', wrist_curl: 'wrist flexion extension curls',
+  calf_slow: 'heavy slow resistance calf raise achilles', bent_calf: 'bent knee calf raise soleus', reverse_nordic: 'reverse nordic curl knee',
+  pushup_plus: 'push up plus serratus', scap_pull: 'scapular pull up', hs_shifts: 'handstand weight shifts drill', compression: 'seated pike compression lifts',
+  ape: 'ape movement animal flow', beast: 'beast crawl animal flow', kick_through: 'kick through animal flow', crawl_stand: 'crawl to squat to stand drill',
+  landing: 'safe landing drills tumbling', sled: 'sled push technique acceleration', lat_bounds: 'lateral bounds plyometric', hollow: 'hollow body hold',
+  '9090': '90 90 hip transitions', pancake: 'pancake stretch progression', pike_stretch: 'pike compression stretch', skin_cat: 'skin the cat rings bar',
+  footwork: 'boxing footwork drills beginner', shadowbox: 'shadowboxing beginner round', climb: 'bouldering technique beginner',
+};
+
 export const DEFAULT_SETTINGS = {
   unit: 'lb', painCap: 3,
   goal: { bwMin: null, bwMax: null, text: 'Lean and athletic. Performance first, scale second.' }, // set in Settings → Goal
