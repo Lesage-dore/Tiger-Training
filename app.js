@@ -87,13 +87,13 @@ function home() {
   const doneToday = L.doneWorkouts(db).filter(w => w.date === today), plan = L.offDayPlan(db, s, today);
   const qbtn = (type, label) => `<p class="muted small" style="margin-top:8px">${label} ${btn(type === 'S' ? 'Mark off-day done' : `Mark FBEOD ${type} done`, 'quick', 'ghost sm', type)}</p>`;
   if (a) todayCard = card('Today', `<h2>${esc(a.name)} in progress</h2>${btn('Resume', 'tab', 'primary', 'log')}`);
-  else if (s.todayPlan.kind === 'train') todayCard = card('Today · train', `<h2>${esc(tname(s.next))}</h2><p class="muted">${esc(tpl(s.next)?.purpose)}</p>
+  else if (s.todayPlan.kind === 'train') todayCard = card('Training day', `<h2>${esc(tname(s.next))}</h2><p class="muted">${esc(tpl(s.next)?.purpose)}</p>
     ${planList(tpl(s.next)?.items || [])}${btn(`Start FBEOD ${s.next}`, 'start', 'primary', s.next)}${qbtn(s.next, 'Already trained today without the app?')}`);
-  else if (s.todayPlan.kind === 'skill' && !doneToday.length) todayCard = card('Today · off-day', `<h2>${esc(plan.name)}</h2>
+  else if (s.todayPlan.kind === 'skill' && !doneToday.length) todayCard = card('Rest day · light skill work', `<h2>${esc(plan.name)}</h2>
     <p class="muted">${plan.why ? `Recovery day: ${esc(plan.why)}. ` : ''}Low fatigue — quality over effort. FBEOD ${s.next} is tomorrow.</p>
     ${planList(plan.blocks.flatMap(b => db.program.blocks.find(x => x.id === b)?.items || []))}
     <div class="row">${btn('Start off-day', 'start-plan', 'primary', plan.id)}${btn('Change blocks', 'tab', 'ghost sm', 'log')}</div>${qbtn('S', 'Did it already, or taking full rest?')}`);
-  else todayCard = card('Today · recover', `<h2>✓ ${esc(doneToday.map(w => w.name).join(' + ') || 'FBEOD ' + s.todayPlan.type)} done</h2>
+  else todayCard = card('Done for today', `<h2>✓ ${esc(doneToday.map(w => w.name).join(' + ') || 'FBEOD ' + s.todayPlan.type)} done</h2>
     <p class="muted">${s.todayPlan.kind === 'done' ? `Rest of the day: eat, sleep, optional 10 min easy mobility. Tomorrow is an off-day; FBEOD ${s.next} after that.` : `Next: FBEOD ${s.next} tomorrow.`}</p>`);
   if (s.todayPlan.kind === 'train') nextTxt = `FBEOD ${nextOf(s.next)} · ${fmtDate(addDays(today, 2))}`;
   else if (s.todayPlan.kind === 'skill') nextTxt = `FBEOD ${s.next} · tomorrow`;

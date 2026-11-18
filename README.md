@@ -7,3 +7,6 @@ your browser and your own exports.
 
 Open the hosted page and add it to your home screen. Run locally with any static server, e.g.
 `python -m http.server` in this folder.
+
+Obsidian: in Chrome/Edge use Settings → Sync to vault, or run `node sync.mjs <path-to-vault>` to turn the
+backup saved in `Fitness/_data/` into Markdown notes.

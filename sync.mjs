@@ -1,12 +1,12 @@
 // Laptop sync: merges every Fitness/_data/tiger-backup*.json in the vault and (re)writes the Markdown notes.
-// Usage:  node apps/tiger/sync.mjs [vaultPath]      (default: the folder two levels up = vault root)
+// Usage:  node sync.mjs <vaultPath>   (the folder that contains Fitness/)
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { merge, newDb, validate, upgrade } from './logic.js';
 import { syncWith, ROOT } from './md.js';
 
-const vault = path.resolve(process.argv[2] || path.join(path.dirname(fileURLToPath(import.meta.url)), '../..'));
+if (!process.argv[2]) { console.error('Usage: node sync.mjs <path to your Obsidian vault>'); process.exit(1); }
+const vault = path.resolve(process.argv[2]);
 const io = {
   read: p => fs.readFile(path.join(vault, p), 'utf8').catch(() => null),
   write: async (p, c) => { await fs.mkdir(path.dirname(path.join(vault, p)), { recursive: true }); await fs.writeFile(path.join(vault, p), c); },
