@@ -41,8 +41,13 @@ Served from `` (any static server). ES modules, so it needs http(s) or localhost
 - e1RM (Epley) only for plain loaded strength/hypertrophy/isolation lifts at 1–12 reps. Never for added-load bodyweight lifts, jumps, sprints, holds or skills.
 - PRs: heaviest, rep PR at a weight already used, e1RM, max reps, longest hold, best jump, fastest sprint per distance, carry. A first log is a baseline, not a PR.
 
-## Tendon distribution
-A: Spanish squat isometric (patellar), cable external rotation. B: none for the lower body (plyos already load Achilles/patellar); wrist curls, hammer curls. C: slow standing calf raises plus bent-knee calf raises (Achilles), tibialis, reverse Nordic, push-up plus. Off-day block: dead hang, scapular pull-ups. Approved 2026-11-18: B order jumps → sprints → sled; C trimmed (pull-ups 3 sets, ab wheel 2).
+## Program v2 — time-efficient (2026-11-24)
+User asked for the shortest effective sessions. Gym days ≈35–45 min, off-days ≈20–30 min (`estimateMin`).
+- Supersets via `ss` on template items (A1/A2…): 20 s transition, full rest only after the pair (`restAfter`). 2–3 hard sets per lift, last set RPE 8–9.
+- A Strength: wpu+squat, OHP+RDL, incline+HLR, Spanish squat finisher. B Power: broad jump+lateral bounds, sprints, sled (60–90 s rests), front squat+weighted chin-up, dips+SL-RDL. C Muscle: pull-up+DB bench, BSS+row, hip thrust+pike, slow calf+ab wheel.
+- Moved out of the gym: L-sit/hollow → off-day skill blocks; tendon work → 4-min superset finishers on off-days (shoulders/wrists: ext rot + wrist curl; knees/shins: reverse Nordic + tib). In-gym tendon: Spanish squat (A), slow calf raises (C). Dropped: farmer carry, hammer curl, push-up plus, bent-knee calf.
+- Off-day plans: mobility (6 min) + 1–2 skills + a tendon finisher; boxing/climbing optional via "Change blocks".
+- `program.version` (PROGRAM_VERSION) drives `upgrade()`: archives the old program, installs new templates/blocks/plans, refreshes seed exercise fields; history untouched. Bump it for future program changes.
 
 ## Skill trees
 Each level has a `crit` (exercise, variation, min reps/sec, sets, min load). `autoUnlock` marks a level done only from logged evidence. Manual done asks for confirmation. Hold targets are set modestly for long-limbed (tall) athletes.

@@ -167,3 +167,5 @@ main.anim .hero-img { animation: zoom 1.2s ease-out both; }
 .bgpick .th { aspect-ratio: 3/4; border-radius: 12px; background: center / cover no-repeat; border: 1px solid rgba(255,255,255,.1); }
 .bgpick label.b { font-size: 12px; padding: 5px 9px; border: 1px solid var(--line); border-radius: 10px; color: var(--text); }
 #toast { top: calc(54px + env(safe-area-inset-top)); }
+.ss { display: inline-block; min-width: 26px; margin-right: 6px; padding: 1px 6px; border-radius: 7px; font-size: 11px; font-weight: 800; text-align: center;
+  color: #111; background: var(--acc); vertical-align: 2px; }

@@ -13,8 +13,13 @@ function load() {
   try {
     const s = localStorage.getItem(KEY);
     if (s) {
-      const raw = JSON.parse(s), was = raw.schema, d = L.upgrade(raw);
-      if (!L.validate(d).length) { if (was !== d.schema) { localStorage.setItem(`${KEY}.pre-v${d.schema}`, s); migrated = true; } return d; } localStorage.setItem(`${KEY}.corrupt.${Date.now()}`, s); }
+      const raw = JSON.parse(s), was = raw.schema, wasP = raw.program?.version, d = L.upgrade(raw);
+      if (!L.validate(d).length) { if (was !== d.schema) { localStorage.setItem(`${KEY}.pre-v${d.schema}`, s); migrated = true; }
+        if (wasP !== d.program.version) migrated = true; // program update: persist now (old program is in db.archive)
+        return d;
+      }
+      localStorage.setItem(`${KEY}.corrupt.${Date.now()}`, s);
+    }
   } catch { }
   return L.newDb();
 }
@@ -105,9 +110,9 @@ function home() {
   const doneToday = L.doneWorkouts(db).filter(w => w.date === today), plan = L.offDayPlan(db, s, today);
   const qbtn = (type, label) => `<p class="muted small" style="margin-top:8px">${label} ${btn(type === 'S' ? 'Mark off-day done' : `Mark FBEOD ${type} done`, 'quick', 'ghost sm', type)}</p>`;
   if (a) todayCard = card('Today', `<h2>${esc(a.name)} in progress</h2>${btn('Resume', 'tab', 'primary', 'log')}`);
-  else if (s.todayPlan.kind === 'train') todayCard = card('Training day', `<h2>${esc(tname(s.next))}</h2><p class="muted">${esc(tpl(s.next)?.purpose)}</p>
+  else if (s.todayPlan.kind === 'train') todayCard = card(`Training day<span class="pct">≈${L.estimateMin(db, tpl(s.next)?.items || [])} min</span>`, `<h2>${esc(tname(s.next))}</h2><p class="muted">${esc(tpl(s.next)?.purpose)}</p>
     ${planList(tpl(s.next)?.items || [])}${btn(`Start FBEOD ${s.next}`, 'start', 'primary', s.next)}${qbtn(s.next, 'Already trained today without the app?')}`);
-  else if (s.todayPlan.kind === 'skill' && !doneToday.length) todayCard = card('Rest day · light skill work', `<h2>${esc(plan.name)}</h2>
+  else if (s.todayPlan.kind === 'skill' && !doneToday.length) todayCard = card(`Rest day · light skill work<span class="pct">≈${L.estimateMin(db, plan.blocks.flatMap(b => db.program.blocks.find(x => x.id === b)?.items || []), 0)} min</span>`, `<h2>${esc(plan.name)}</h2>
     <p class="muted">${plan.why ? `Recovery day: ${esc(plan.why)}. ` : ''}Low fatigue — quality over effort. FBEOD ${s.next} is tomorrow.</p>
     ${planList(plan.blocks.flatMap(b => db.program.blocks.find(x => x.id === b)?.items || []))}
     <div class="row">${btn('Start off-day', 'start-plan', 'primary', plan.id)}${btn('Change blocks', 'tab', 'ghost sm', 'log')}</div>${qbtn('S', 'Did it already, or taking full rest?')}`);
@@ -181,7 +186,7 @@ function planList(items) {
   return `<ul class="list plan">${items.filter(it => X0[it.ex] && !seen.has(it.ex) && seen.add(it.ex)).map(it => {
     const ex = X0[it.ex], v = ex.vars ? (L.history(db, ex.id)[0]?.variant || ex.vars[0].id) : undefined;
     const sug = L.suggest(db, ex, it, L.history(db, ex.id, { variant: v }));
-    return `<li><div class="grow"><b>${esc(ex.name)}</b>${v ? ` <span class="muted small">${esc(L.varName(ex, v))}</span>` : ''}${sug.warn || !sug.text.startsWith('Quality reps') ? `<div class="muted small ${sug.warn ? 'warnc' : ''}">${esc(sug.text)}</div>` : ''}</div>
+    return `<li><div class="grow">${it.ss ? `<span class="ss">${it.ss}${items.filter(x => x.ss === it.ss).indexOf(it) + 1}</span>` : ''}<b>${esc(ex.name)}</b>${v ? ` <span class="muted small">${esc(L.varName(ex, v))}</span>` : ''}${sug.warn || !sug.text.startsWith('Quality reps') ? `<div class="muted small ${sug.warn ? 'warnc' : ''}">${esc(sug.text)}</div>` : ''}</div>
       <span class="tgt small">${esc(L.fmtTarget(ex, it))}</span><a class="demo" href="${esc(demoUrl(ex, v))}" target="_blank" rel="noopener" aria-label="Demo">▶</a></li>`; }).join('')}</ul>`;
 }
 function demoUrl(ex, v, images) {
@@ -194,7 +199,7 @@ function startPicker() {
   const s = L.schedule(db);
   return hero(`<p class="eyebrow">Train</p><h1>Choose the hunt</h1><p class="sub">Next up: FBEOD ${s.next} — ${esc(tpl(s.next)?.title || '')}</p>`, 'short') +
     card('Start a session', db.program.templates.map(t =>
-    `<div class="row" style="margin:6px 0"><div class="grow"><b>${esc(t.name)}</b> <span class="muted">${esc(t.title)}</span></div>${btn(t.id === s.next ? 'Start · next' : 'Start', 'start', t.id === s.next ? 'primary sm' : 'sm', t.id)}</div>`).join('') +
+    `<div class="row" style="margin:6px 0"><div class="grow"><b>${esc(t.name)}</b> <span class="muted">${esc(t.title)} · ≈${L.estimateMin(db, t.items)} min</span></div>${btn(t.id === s.next ? 'Start · next' : 'Start', 'start', t.id === s.next ? 'primary sm' : 'sm', t.id)}</div>`).join('') +
     `<div class="row" style="margin-top:10px">${btn('Empty session', 'start', 'ghost sm', '')}</div>`) +
     card('Log a session done without the app', `<div class="row"><select id="q-type" style="flex:2">${db.program.templates.map(t => `<option value="${t.id}">${esc(t.name)} — ${esc(t.title)}</option>`).join('')}<option value="S">Off-day</option></select>
       <input id="q-date" type="date" value="${L.localDate()}" style="flex:1.3"></div><div class="row" style="margin-top:8px">${btn('Mark as done', 'quick', 'sm', '')}</div>
@@ -223,7 +228,7 @@ function entryCard(w, en) {
       ${sel('data-f="rpe" class="rpe"', RPE, s.rpe, 'RPE')}<button class="ck" data-act="done" aria-label="Set done">✓</button></div>`;
   }).join('');
   return `<section class="card ex ${en.skipped ? 'skipped' : ''}" data-e="${en.id}">
-    <div class="ex-h"><div><b>${esc(ex.name)}</b><span class="tag">${esc(ex.cat)}</span>${en.subFor ? `<span class="tag">sub</span>` : ''}</div><span class="tgt">${esc(L.fmtTarget(ex, en.tgt))} <button class="demo" data-act="demo" aria-label="How to">▶</button></span></div>
+    <div class="ex-h"><div>${en.tgt?.ss ? `<span class="ss">${L.ssTag(w, en)}</span>` : ''}<b>${esc(ex.name)}</b><span class="tag">${esc(ex.cat)}</span>${en.subFor ? `<span class="tag">sub</span>` : ''}</div><span class="tgt">${esc(L.fmtTarget(ex, en.tgt))} <button class="demo" data-act="demo" aria-label="How to">▶</button></span></div>
     ${ui.demo[en.id] ? `<div class="q" style="margin-top:6px"><a class="b sm" href="${esc(demoUrl(ex, en.variant))}" target="_blank" rel="noopener">▶ ${ex.video ? 'My demo' : 'Video demos'}</a>
       <a class="b sm" href="${esc(demoUrl(ex, en.variant, true))}" target="_blank" rel="noopener">Images</a><button data-act="demo-set">${ex.video ? 'Change my link' : 'Save my own link'}</button></div>` : ''}
     ${ex.vars ? `<div style="margin-top:6px"><select data-en="variant">${ex.vars.map(v => `<option value="${v.id}" ${v.id === en.variant ? 'selected' : ''}>${esc(v.name)}</option>`).join('')}</select></div>` : ''}
@@ -520,8 +525,7 @@ const A = {
     s.done = true; s.at = nowIso(); touch(w);
     const now = L.prsFor(ex, en, L.bests(ex, L.history(db, ex.id, { exclude: w.id, before: w.date, variant: en.variant })));
     if (now.length > before) { toast('🏆 PR — ' + now.at(-1)); navigator.vibrate?.(80); }
-    const cfg = L.catCfg(db, ex);
-    startRest(ex.rest ?? cfg.rest, `${ex.name} · set ${en.sets.indexOf(s) + 2 <= en.sets.length ? en.sets.indexOf(s) + 2 : 'next exercise'}`);
+    const r = L.restAfter(db, w, en); startRest(r.sec, r.label);
     render();
   },
   prevw(v, el) {

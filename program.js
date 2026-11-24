@@ -55,19 +55,19 @@ export const EXERCISES = [
   X('ohp', 'Overhead Press', 'strength', 'load', { inc: 2.5, rg: ['shoulder'] }),
   X('bss', 'Bulgarian Split Squat', 'hypertrophy', 'load', { side: true, rg: ['knee'] }),
   X('hlr', 'Hanging Leg Raise', 'calisthenics', 'reps'),
-  X('lsit', 'L-Sit', 'isometric', 'time', { rg: ['wrist'], tree: 'lsit', vars: V(['tuck', 'Tuck support'], ['one_leg', 'One-leg extension'], ['full', 'Full L-sit'], ['v', 'V-sit progression']) }),
+  X('lsit', 'L-Sit', 'isometric', 'time', { rest: 60, rg: ['wrist'], tree: 'lsit', vars: V(['tuck', 'Tuck support'], ['one_leg', 'One-leg extension'], ['full', 'Full L-sit'], ['v', 'V-sit progression']) }),
   X('ext_rot', 'Cable External Rotation', 'tendon', 'load', { side: true, inc: 2.5, rg: ['shoulder'], note: 'Slow 3 s lowering.' }),
   // B — explosive first
-  X('broad_jump', 'Broad Jump', 'jump', 'jump', { dUnit: 'in', rg: ['achilles', 'knee'] }),
-  X('lat_bounds', 'Lateral Bounds', 'jump', 'reps', { side: true, rg: ['achilles', 'ankle'] }),
-  X('sprint', 'Sprint', 'sprint', 'sprint', { dUnit: 'm', rg: ['achilles', 'hamstring'] }),
-  X('sled', 'Sled Push', 'power', 'carry', { dUnit: 'm', rg: ['knee'], note: 'Load where you can still drive fast. Speed drops → stop adding.' }),
+  X('broad_jump', 'Broad Jump', 'jump', 'jump', { rest: 75, dUnit: 'in', rg: ['achilles', 'knee'] }),
+  X('lat_bounds', 'Lateral Bounds', 'jump', 'reps', { rest: 60, side: true, rg: ['achilles', 'ankle'] }),
+  X('sprint', 'Sprint', 'sprint', 'sprint', { rest: 90, dUnit: 'm', rg: ['achilles', 'hamstring'] }),
+  X('sled', 'Sled Push', 'power', 'carry', { rest: 90, dUnit: 'm', rg: ['knee'], note: 'Load where you can still drive fast. Speed drops → stop adding.' }),
   X('front_squat', 'Front Squat', 'strength', 'load', { rg: ['knee'] }),
   X('wcu', 'Weighted Chin-Up', 'strength', 'load', { added: true, inc: 2.5, rg: ['elbow'] }),
   X('dips', 'Dips', 'calisthenics', 'load', { added: true, rg: ['shoulder', 'elbow'] }),
   X('sl_rdl', 'Single-Leg RDL', 'hypertrophy', 'load', { side: true, rg: ['hamstring'] }),
   X('farmer', 'Farmer Carry', 'conditioning', 'carry', { dUnit: 'm', rg: ['wrist'] }),
-  X('hollow', 'Hollow-Body Hold', 'isometric', 'time'),
+  X('hollow', 'Hollow-Body Hold', 'isometric', 'time', { rest: 45 }),
   X('wrist_curl', 'Wrist Flexion + Extension', 'tendon', 'load', { inc: 2.5, rg: ['wrist'], note: 'One set each direction counts as one set. Slow.' }),
   X('hammer_curl', 'Hammer Curl', 'tendon', 'load', { rg: ['elbow'], note: '3 s lowering.' }),
   // C
@@ -97,14 +97,14 @@ export const EXERCISES = [
   X('ankle_mob', 'Ankle Dorsiflexion', 'mobility', 'reps', { side: true }),
   X('tspine', 'Thoracic Mobility', 'mobility', 'reps'),
   // off-day: skills
-  X('handstand', 'Handstand', 'isometric', 'time', { rg: ['wrist', 'shoulder'], tree: 'hs', vars: V(['wall', 'Wall-facing'], ['free', 'Freestanding']) }),
+  X('handstand', 'Handstand', 'isometric', 'time', { rest: 60, rg: ['wrist', 'shoulder'], tree: 'hs', vars: V(['wall', 'Wall-facing'], ['free', 'Freestanding']) }),
   X('hs_shifts', 'Handstand Weight Shifts', 'acrobatics', 'practice', { rg: ['wrist'], tree: 'hs' }),
   X('sh_taps', 'Handstand Shoulder Taps', 'acrobatics', 'practice', { rg: ['wrist', 'shoulder'], tree: 'hs' }),
   X('hs_walk', 'Handstand Walk (steps)', 'acrobatics', 'practice', { rg: ['wrist'], tree: 'hs' }),
-  X('compression', 'Seated Compression Lifts', 'calisthenics', 'reps', { tree: 'lsit' }),
+  X('compression', 'Seated Compression Lifts', 'calisthenics', 'reps', { rest: 60, tree: 'lsit' }),
   X('muscle_up', 'Muscle-Up Progression', 'calisthenics', 'reps', { rg: ['elbow', 'shoulder'], tree: 'mu',
     vars: V(['c2b', 'Chest-to-bar pull-up'], ['sbdip', 'Straight-bar dip'], ['negative', 'Slow negative'], ['band', 'Banded muscle-up'], ['strict', 'Strict muscle-up']) }),
-  X('planche', 'Planche Progression', 'isometric', 'time', { rg: ['wrist', 'elbow'], tree: 'planche', vars: V(['lean', 'Planche lean'], ['tuck', 'Tuck'], ['adv_tuck', 'Advanced tuck'], ['straddle', 'Straddle']) }),
+  X('planche', 'Planche Progression', 'isometric', 'time', { rest: 75, rg: ['wrist', 'elbow'], tree: 'planche', vars: V(['lean', 'Planche lean'], ['tuck', 'Tuck'], ['adv_tuck', 'Advanced tuck'], ['straddle', 'Straddle']) }),
   X('front_lever', 'Front Lever Progression', 'isometric', 'time', { rg: ['shoulder', 'elbow'], tree: 'fl', vars: V(['tuck', 'Tuck'], ['adv_tuck', 'Advanced tuck'], ['one_leg', 'One-leg'], ['straddle', 'Straddle'], ['full', 'Full']) }),
   X('back_lever', 'Back Lever Progression', 'isometric', 'time', { rg: ['shoulder', 'elbow'], tree: 'bl', vars: V(['german', 'German hang'], ['tuck', 'Tuck'], ['adv_tuck', 'Advanced tuck'], ['one_leg', 'One-leg'], ['straddle', 'Straddle'], ['full', 'Full']) }),
   X('skin_cat', 'Skin the Cat', 'calisthenics', 'reps', { rg: ['shoulder'], tree: 'bl' }),
@@ -132,38 +132,44 @@ export const EXERCISES = [
 
 // target: sets (setsMax), min–max of the kind's main field (reps, sec, m)
 const T = (ex, sets, min, max = min, o = {}) => ({ ex, sets, min, max, ...o });
+// Time-efficient program (v2, 2026-11-24): ~40–45 min per session.
+// ss = superset group: do X1 then X2 back to back, rest after the pair. Hard sets (last set RPE 8–9) beat junk volume.
+// Core, L-sit and most tendon work moved to the short at-home off-day blocks.
+export const PROGRAM_VERSION = 2;
 export const TEMPLATES = [
-  { id: 'A', name: 'FBEOD A', title: 'Strength + Calisthenics', fbeod: true,
-    purpose: 'Foundational strength and relative strength. Tendon: patellar (Spanish squat), rotator cuff.',
-    items: [T('wpu', 4, 4, 8), T('squat', 4, 5, 8), T('spanish_squat', 3, 30, 45, { note: 'Right after squats.' }), T('incline_db', 3, 6, 10),
-      T('rdl', 3, 6, 10), T('ohp', 3, 6, 10), T('bss', 2, 8, 10), T('hlr', 3, 8, 12), T('lsit', 3, 10, 20, { setsMax: 4 }), T('ext_rot', 2, 12, 15)] },
+  { id: 'A', name: 'FBEOD A', title: 'Strength', fbeod: true,
+    purpose: '≈40 min. 5 min warm-up + ramp sets. Supersets: rest only after the pair. Last set of each lift at RPE 8–9.',
+    items: [T('wpu', 3, 4, 8, { ss: 'A' }), T('squat', 3, 5, 8, { ss: 'A' }),
+      T('ohp', 3, 6, 10, { ss: 'B' }), T('rdl', 3, 6, 10, { ss: 'B' }),
+      T('incline_db', 2, 8, 12, { ss: 'C' }), T('hlr', 2, 8, 12, { ss: 'C' }),
+      T('spanish_squat', 2, 30, 45, { note: 'Finisher — patellar tendon.' })] },
   { id: 'B', name: 'FBEOD B', title: 'Power + Athleticism', fbeod: true,
-    purpose: 'Explosive work first, fresh, full rest. Jumps and sprints already load Achilles/patellar — tendon work here is upper body only.',
-    items: [T('broad_jump', 3, 3, 3, { note: '3 jumps per set — log best' }), T('lat_bounds', 3, 4), T('sprint', 4, 10, 20),
-      T('sled', 4, 15, 20), T('front_squat', 3, 5, 8), T('wcu', 3, 5, 8), T('dips', 3, 6, 10), T('sl_rdl', 2, 8, 8, { setsMax: 3 }),
-      T('farmer', 3, 20, 30), T('hollow', 3, 20, 40), T('wrist_curl', 2, 15, 20), T('hammer_curl', 2, 10, 12)] },
-  { id: 'C', name: 'FBEOD C', title: 'Muscle + Athletic Strength', fbeod: true,
-    purpose: 'Muscle plus the main lower-leg and knee tendon block (slow heavy calves, reverse Nordics).',
-    items: [T('pullup', 3, 6, 10), T('bss', 3, 8, 12), T('db_bench', 3, 8, 12), T('hip_thrust', 3, 8, 12), T('cs_row', 3, 8, 12),
-      T('pike_pu', 3, 6, 12), T('calf_slow', 3, 8, 12), T('bent_calf', 2, 10, 15), T('tib', 2, 15, 20), T('reverse_nordic', 2, 6, 10),
-      T('pushup_plus', 2, 10, 15), T('ab_wheel', 2, 6, 12)] },
+    purpose: '≈45 min. Explosive first and fresh: full rest on jumps/sprints, stop if speed drops. Then two strength supersets.',
+    items: [T('broad_jump', 3, 3, 3, { ss: 'J', note: '3 jumps per set — log best' }), T('lat_bounds', 3, 4, 4, { ss: 'J' }), T('sprint', 4, 10, 20),
+      T('sled', 3, 15, 20), T('front_squat', 3, 5, 8, { ss: 'A' }), T('wcu', 3, 5, 8, { ss: 'A' }),
+      T('dips', 3, 6, 10, { ss: 'B' }), T('sl_rdl', 2, 8, 8, { ss: 'B' })] },
+  { id: 'C', name: 'FBEOD C', title: 'Muscle', fbeod: true,
+    purpose: '≈40 min. Four supersets, 60–90 s rest after each pair. Take the last set close to failure (1–2 reps left).',
+    items: [T('pullup', 3, 6, 10, { ss: 'A' }), T('db_bench', 3, 8, 12, { ss: 'A' }),
+      T('bss', 3, 8, 12, { ss: 'B' }), T('cs_row', 3, 8, 12, { ss: 'B' }),
+      T('hip_thrust', 2, 8, 12, { ss: 'C' }), T('pike_pu', 2, 6, 12, { ss: 'C' }),
+      T('calf_slow', 3, 8, 12, { ss: 'D' }), T('ab_wheel', 2, 6, 12, { ss: 'D' })] },
 ];
 
-// Off-day building blocks — pick any combination on the day.
+// Off-day building blocks — short, at home, low fatigue.
 export const BLOCKS = [
-  { id: 'mobility', name: 'Mobility', items: [T('deep_squat', 2, 60), T('cossack', 2, 6), T('9090', 2, 10), T('pancake', 2, 45), T('pike_stretch', 2, 45),
-    T('hip_flexor', 2, 30), T('shoulder_flex', 2, 30), T('tspine', 2, 10), T('ankle_mob', 2, 10), T('wrist_mob', 1, 15)] },
-  { id: 'handstand', name: 'Handstand', items: [T('wrist_mob', 1, 15), T('handstand', 5, 20, 40), T('hs_shifts', 3, 10), T('sh_taps', 3, 10)] },
-  { id: 'compression', name: 'L-sit + compression', items: [T('compression', 3, 10), T('lsit', 4, 10, 20)] },
-  { id: 'mu', name: 'Muscle-up', items: [T('muscle_up', 4, 3, 5)] },
+  { id: 'mobility', name: 'Mobility (6 min)', items: [T('deep_squat', 1, 60), T('9090', 1, 10), T('hip_flexor', 1, 30), T('ankle_mob', 1, 10), T('shoulder_flex', 1, 30)] },
+  { id: 'handstand', name: 'Handstand', items: [T('wrist_mob', 1, 15), T('handstand', 4, 20, 40), T('sh_taps', 2, 10)] },
+  { id: 'compression', name: 'L-sit + compression', items: [T('compression', 2, 10, 10, { ss: 'L' }), T('lsit', 3, 10, 20, { ss: 'L' })] },
+  { id: 'mu', name: 'Muscle-up', items: [T('scap_pull', 2, 10), T('muscle_up', 4, 3, 5)] },
   { id: 'planche', name: 'Planche', items: [T('wrist_mob', 1, 15), T('planche', 4, 8, 15)] },
-  { id: 'levers', name: 'Front + back lever', items: [T('front_lever', 4, 8, 12), T('back_lever', 3, 8, 12)] },
+  { id: 'levers', name: 'Front + back lever', items: [T('front_lever', 3, 8, 12), T('back_lever', 3, 8, 12)] },
   { id: 'pistol', name: 'Pistol', items: [T('pistol', 3, 5, 8)] },
-  { id: 'animal', name: 'Animal movement', items: [T('bear', 2, 30), T('lat_bear', 2, 30), T('beast', 2, 30), T('crab', 2, 30),
-    T('kick_through', 2, 10), T('ape', 2, 30), T('low_crawl', 2, 30), T('crawl_stand', 2, 5)] },
-  { id: 'acro', name: 'Acrobatics', items: [T('landing', 1, 5), T('fwd_roll', 2, 5), T('back_roll', 2, 5), T('cartwheel', 3, 5), T('roundoff', 2, 3)] },
-  { id: 'tendon', name: 'Light tendon + grip', items: [T('dead_hang', 3, 30, 45), T('scap_pull', 2, 10), T('wrist_mob', 1, 15)] },
-  { id: 'boxing', name: 'Boxing', items: [T('footwork', 3, 60), T('shadowbox', 4, 120, 180)] },
+  { id: 'animal', name: 'Animal movement', items: [T('bear', 2, 30), T('lat_bear', 2, 30), T('kick_through', 2, 10)] },
+  { id: 'acro', name: 'Acrobatics', items: [T('wrist_mob', 1, 15), T('landing', 1, 5), T('fwd_roll', 2, 5), T('back_roll', 2, 5), T('cartwheel', 3, 5), T('roundoff', 2, 3)] },
+  { id: 'tendon', name: 'Tendon finisher — shoulders/wrists (4 min)', items: [T('ext_rot', 2, 12, 15, { ss: 'T' }), T('wrist_curl', 2, 15, 20, { ss: 'T' })] },
+  { id: 'tendon_lo', name: 'Tendon finisher — knees/shins (4 min)', items: [T('reverse_nordic', 2, 6, 10, { ss: 'T' }), T('tib', 2, 15, 20, { ss: 'T' })] },
+  { id: 'boxing', name: 'Boxing', items: [T('footwork', 2, 60), T('shadowbox', 3, 120, 180)] },
   { id: 'climb', name: 'Climbing / grip', items: [T('climb', 1, 8, 15), T('dead_hang', 2, 30, 45)] },
 ];
 
@@ -232,13 +238,12 @@ export const TESTS = [
 // Off-day plans, cycled in order. avoidBefore: skip this plan the day before that FBEOD session
 // (keeps pulling/leg-heavy skill work away from A's weighted pulls/squats and B's jumps/sprints).
 export const OFF_PLANS = [
-  { id: 'p1', name: 'Handstand + L-sit', blocks: ['mobility', 'handstand', 'compression'] },
-  { id: 'p2', name: 'Crawl + levers', blocks: ['mobility', 'animal', 'levers'], avoidBefore: ['A'] },
-  { id: 'p3', name: 'Acrobatics + planche', blocks: ['mobility', 'acro', 'planche'], avoidBefore: ['B'] },
-  { id: 'p4', name: 'Muscle-up + pistol', blocks: ['mobility', 'mu', 'pistol', 'tendon'], avoidBefore: ['A', 'B'] },
-  { id: 'p5', name: 'Boxing + grip', blocks: ['mobility', 'boxing', 'climb'] },
+  { id: 'p1', name: 'Handstand + L-sit', blocks: ['mobility', 'handstand', 'compression', 'tendon'] },
+  { id: 'p2', name: 'Levers', blocks: ['mobility', 'levers', 'tendon_lo'], avoidBefore: ['A'] },
+  { id: 'p3', name: 'Acrobatics + crawl', blocks: ['mobility', 'acro', 'animal', 'tendon'], avoidBefore: ['B'] },
+  { id: 'p4', name: 'Muscle-up', blocks: ['mobility', 'mu', 'tendon_lo'], avoidBefore: ['A', 'B'] },
+  { id: 'p5', name: 'Pistol + planche', blocks: ['mobility', 'pistol', 'planche', 'tendon'], avoidBefore: ['B'] },
 ];
-// Recovery-only plan when soreness is high or a tendon is irritated.
 export const RECOVERY_PLAN = { id: 'rec', name: 'Recovery (mobility only)', blocks: ['mobility'] };
 
 // Better demo-search terms where the plain name is ambiguous.

@@ -1,5 +1,5 @@
 // Pure logic: no DOM. Shared by the app (browser) and sync.mjs (Node).
-import { KINDS, CATEGORIES, EXERCISES, TEMPLATES, BLOCKS, SKILL_TREES, TESTS, DEFAULT_SETTINGS, REGIONS, OFF_PLANS, RECOVERY_PLAN } from './program.js';
+import { KINDS, CATEGORIES, EXERCISES, TEMPLATES, BLOCKS, SKILL_TREES, TESTS, DEFAULT_SETTINGS, REGIONS, OFF_PLANS, RECOVERY_PLAN, PROGRAM_VERSION } from './program.js';
 
 export const SCHEMA = 2;
 const ARRAYS = ['workouts', 'measurements', 'results', 'checkins', 'photos', 'revisions', 'trash', 'archive'];
@@ -16,7 +16,7 @@ export function newDb() {
   return {
     schema: SCHEMA, createdAt: t, updatedAt: t,
     settings: { ...clone(DEFAULT_SETTINGS), categories: clone(CATEGORIES), _u: t },
-    program: { exercises: clone(EXERCISES), templates: clone(TEMPLATES), blocks: clone(BLOCKS), offPlans: clone(OFF_PLANS), _u: t },
+    program: { exercises: clone(EXERCISES), templates: clone(TEMPLATES), blocks: clone(BLOCKS), offPlans: clone(OFF_PLANS), version: PROGRAM_VERSION, _u: t },
     skills: { trees: clone(SKILL_TREES), status: {}, _u: t },
     tests: { defs: clone(TESTS), _u: t },
     ...Object.fromEntries(ARRAYS.map(k => [k, []])),
@@ -26,7 +26,18 @@ export function newDb() {
 // Schema migrations. Never touches logged records; the old program/skills are archived first.
 export function upgrade(db) {
   if (!db) return db;
-  if (db.schema === SCHEMA) { if (db.program && !db.program.offPlans) db.program.offPlans = clone(OFF_PLANS); return db; }
+  if (db.schema === SCHEMA) {
+    if (db.program && !db.program.offPlans) db.program.offPlans = clone(OFF_PLANS);
+    // Program updates: archive the old program, install the new templates/blocks; logged history is untouched.
+    if (db.program && (db.program.version || 1) < PROGRAM_VERSION) {
+      const t = now(); (db.archive ||= []).push({ id: uid('a'), at: t, updatedAt: t, reason: `program v${db.program.version || 1} → v${PROGRAM_VERSION}`, program: clone(db.program) });
+      const have = new Set(db.program.exercises.map(e => e.id));
+      const seed = Object.fromEntries(EXERCISES.map(e => [e.id, e]));
+      db.program = { ...db.program, exercises: [...db.program.exercises.map(e => seed[e.id] ? { ...e, ...clone(seed[e.id]) } : e), ...clone(EXERCISES).filter(e => !have.has(e.id))],
+        templates: clone(TEMPLATES), blocks: clone(BLOCKS), offPlans: clone(OFF_PLANS), version: PROGRAM_VERSION, _u: t };
+    }
+    return db;
+  }
   if (db.schema === 1) {
     const t = now();
     db.archive = db.archive || [];
@@ -347,6 +358,33 @@ export function weekly(db, today = localDate(), n = 7) {
   return { sessions: ws.length, sets, tonnage, tendonSessions: tendon, painMax: pains.length ? Math.max(...pains) : null,
     checkins: ck.length, soreness: sore.length ? Math.round(sore.reduce((a, b) => a + b, 0) / sore.length * 10) / 10 : null };
 }
+
+// ---------- session time ----------
+const restOf = (db, ex) => ex.rest ?? catCfg(db, ex).rest ?? 0;
+// Rough minutes for a list of template items, counting supersets (rest only after the pair) + warm-up.
+export function estimateMin(db, items, warmup = 5) {
+  const X = exMap(db), groups = [];
+  for (const it of items) { if (!X[it.ex]) continue; const g = it.ss && groups.find(g => g.ss === it.ss); g ? g.items.push(it) : groups.push({ ss: it.ss, items: [it] }); }
+  let sec = 0;
+  for (const g of groups) {
+    const rounds = Math.max(...g.items.map(i => i.sets));
+    const work = g.items.reduce((a, it) => { const ex = X[it.ex], k = ex.kind;
+      return a + (k === 'time' ? (it.min + it.max) / 2 : k === 'sprint' || k === 'jump' ? 10 : k === 'carry' ? 30 : 40) * (ex.side ? 2 : 1); }, 0);
+    const rest = Math.max(...g.items.map(it => restOf(db, X[it.ex])));
+    sec += rounds * (work + 20 * (g.items.length - 1) + (g.items.length > 1 ? Math.max(60, rest - 60) : rest || 20));
+  }
+  return Math.max(5, Math.round((sec / 60 + warmup) / 5) * 5);
+}
+// Rest after a set: short transition to the next exercise of a superset, full rest after the pair.
+export function restAfter(db, w, en) {
+  const X = exMap(db), ex = X[en.ex];
+  if (!en.tgt?.ss) return { sec: restOf(db, ex), label: ex.name };
+  const grp = w.entries.filter(e => e.tgt?.ss === en.tgt.ss && !e.skipped && X[e.ex]);
+  const next = grp.slice(grp.indexOf(en) + 1).find(e => e.sets.some(s => !s.done));
+  if (next) return { sec: 20, label: `→ ${en.tgt.ss}${grp.indexOf(next) + 1} ${X[next.ex].name}` };
+  return { sec: Math.max(60, Math.max(...grp.map(e => restOf(db, X[e.ex]))) - 60), label: `Rest, then ${en.tgt.ss}1 again` };
+}
+export const ssTag = (w, en) => { if (!en.tgt?.ss) return ''; const g = w.entries.filter(e => e.tgt?.ss === en.tgt.ss); return en.tgt.ss + (g.indexOf(en) + 1); };
 
 // ---------- rotation / schedule ----------
 export function schedule(db, today = localDate()) {
